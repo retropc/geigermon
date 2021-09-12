@@ -1,0 +1,15 @@
+[Unit]
+Description=geigermon service
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/path/to/geigermon/geigermon -s gmc300eplus /dev/tty... -S multicast bind_addr target_addr target_port ttl
+User=uid
+Group=gid
+Restart=always
+RestartSec=10
+TimeoutStopSec=2
+
+[Install]
+WantedBy=multi-user.target

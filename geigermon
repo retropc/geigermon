@@ -1,0 +1,56 @@
+#!/usr/bin/env python3
+
+import sys
+import sources
+import sinks
+
+def main(source, sink):
+  for cps, cpm, cph, usvh in source:
+    sink.emit(cps, cpm, cph, usvh)
+
+if __name__ == "__main__":
+  args = sys.argv[1:]
+
+  while args:
+    arg = args.pop(0)
+    if arg == "-s":
+      name = args.pop(0)
+      if name == "gmc300eplus":
+        device = args.pop(0)
+        source_f = lambda: sources.GMC300EPlusSource(device, 57600)
+      elif name == "multicast":
+        bind_addr = args.pop(0)
+        target = (args.pop(0), int(args.pop(0)))
+        source_addr = args.pop(0)
+        source_f = lambda: sources.MulticastSource(bind_addr, target, source_addr)
+      else:
+        raise Exception("unknown source: %s" % name)
+    elif arg == "-S":
+      name = args.pop(0)
+      if name == "multicast":
+        bind_addr = (args.pop(0), 0)
+        target = (args.pop(0), int(args.pop(0)))
+        ttl = int(args.pop(0))
+        sink_f = lambda: sinks.MulticastSink(target, bind_addr=bind_addr, ttl=ttl)
+      elif name == "file":
+        filename = args.pop(0)
+        sink_f = lambda: sinks.FileSink(filename)
+      elif name == "stdout":
+        sink_f = lambda: sinks.StdoutSink()
+      else:
+        raise Exception("unknown sink: %s" % name)
+    else:
+      raise Exception("unknown arg: %s" % arg)
+
+  try:
+    source = source_f()
+    try:
+      sink = sink_f()
+      try:
+        main(source, sink)
+      finally:
+        sink.close()
+    finally:
+      source.close()
+  except KeyboardInterrupt:
+    pass
