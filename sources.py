@@ -28,6 +28,7 @@ class GeigerSource(Source):
 class MulticastSource(Source):
   def __init__(self, bind_addr, target, source_addr):
     self.__s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    self.__s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     self.__s.bind(target)
     self.__s.setsockopt(socket.IPPROTO_IP, IP_ADD_SOURCE_MEMBERSHIP, socket.inet_aton(target[0]) + socket.inet_aton(bind_addr) + socket.inet_aton(source_addr))
 
