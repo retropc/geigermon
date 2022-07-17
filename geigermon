@@ -11,6 +11,7 @@ def main(source, sink):
 if __name__ == "__main__":
   args = sys.argv[1:]
 
+  sink_fs = []
   while args:
     arg = args.pop(0)
     if arg == "-s":
@@ -31,15 +32,15 @@ if __name__ == "__main__":
         bind_addr = (args.pop(0), 0)
         target = (args.pop(0), int(args.pop(0)))
         ttl = int(args.pop(0))
-        sink_f = lambda: sinks.MulticastSink(target, bind_addr=bind_addr, ttl=ttl)
+        sink_fs.append(lambda: sinks.MulticastSink(target, bind_addr=bind_addr, ttl=ttl))
       elif name == "file":
         filename = args.pop(0)
-        sink_f = lambda: sinks.FileSink(filename)
+        sink_fs.append(lambda: sinks.FileSink(filename))
       elif name == "pointfile":
         path = args.pop(0)
-        sink_f = lambda: sinks.PointFileSink(path)
+        sink_fs.append(lambda: sinks.PointFileSink(path))
       elif name == "stdout":
-        sink_f = lambda: sinks.StdoutSink()
+        sink_fs.append(lambda: sinks.StdoutSink())
       else:
         raise Exception("unknown sink: %s" % name)
     else:
@@ -48,7 +49,7 @@ if __name__ == "__main__":
   try:
     source = source_f()
     try:
-      sink = sink_f()
+      sink = sinks.MultiSink([sink_f() for sink_f in sink_fs])
       try:
         main(source, sink)
       finally:

@@ -90,3 +90,15 @@ class MulticastSink(Sink):
       self.__s.close()
     finally:
       self.__s = None
+
+class MultiSink(Sink):
+  def __init__(self, sinks):
+    self.__sinks = list(sinks)
+
+  def emit(self, cps, cpm, cph, usvh):
+    for sink in self.__sinks:
+      sink.emit(cps, cpm, cph, usvh)
+
+  def close(self):
+    for sink in self.__sinks:
+      sink.close()
