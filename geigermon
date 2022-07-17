@@ -35,6 +35,9 @@ if __name__ == "__main__":
       elif name == "file":
         filename = args.pop(0)
         sink_f = lambda: sinks.FileSink(filename)
+      elif name == "pointfile":
+        path = args.pop(0)
+        sink_f = lambda: sinks.PointFileSink(path)
       elif name == "stdout":
         sink_f = lambda: sinks.StdoutSink()
       else:

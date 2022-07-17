@@ -2,6 +2,10 @@ import struct
 import socket
 import util
 import json
+import time
+import datetime
+import os
+import pointfile
 
 class Sink:
   def emit(self, cps, cpm, cph, usvh): raise Exception("not implemented")
@@ -13,6 +17,46 @@ class FileSink(Sink):
 
   def emit(self, cps, cpm, cph, usvh):
     util.atomic_write(self.filename, json.dumps({"cps": cps, "cpm": cpm, "cph": cph, "usvh": usvh}).encode("utf8"), fsync=False)
+
+class PointFileSink(Sink):
+  def __init__(self, path):
+    self.__path = path
+    os.makedirs(path, exist_ok=True)
+
+    self.__last_ts = -1
+    self.__last_v = 0
+    self.__last_f = None
+    self.__last_d = None
+
+  def emit(self, cps, cpm, cph, usvh):
+    ts = int(time.time())
+    if ts == self.__last_ts:
+      self.__last_v += cps
+    else:
+      self.__last_ts = ts
+      self.__last_v = cps
+
+    self.__write_point(ts, self.__last_v)
+
+  def __write_point(self, ts, v):
+    self.__get_file(ts).add_point(ts, v)
+
+  def __get_file(self, ts):
+    date = datetime.datetime.fromtimestamp(ts, tz=datetime.timezone.utc).date()
+    if date != self.__last_d:
+      if self.__last_f is not None:
+        self.__last_f.close()
+      self.__last_f = pointfile.PointFile(os.path.join(self.__path, date.strftime("%Y-%m-%d.pf")))
+      self.__last_d = date
+    return self.__last_f
+
+  def close(self):
+    if self.__last_f is not None:
+      if self.__last_ts != -1:
+        self.__write_point(self.__last_ts, self.__last_v)
+        self.__last_ts = -1
+      self.__last_f.close()
+      self.__last_f = None
 
 class StdoutSink(Sink):
   def emit(self, cps, cpm, cph, usvh):
