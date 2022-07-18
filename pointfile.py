@@ -7,7 +7,7 @@ class PointFile:
   UNPACK = struct.Struct("@B").unpack
 
   def __init__(self, filename):
-    self.__fd = os.open(filename, os.O_CREAT|os.O_RDWR|os.O_CLOEXEC)
+    self.__fd = os.open(filename, os.O_CREAT|os.O_RDWR|os.O_CLOEXEC, 0o644)
     try:
       os.truncate(self.__fd, 43200)
       self.__m = mmap.mmap(self.__fd, 43200)
